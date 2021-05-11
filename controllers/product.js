@@ -1,73 +1,65 @@
-const Product = require('../models/Products')
-const Cart = require('../models/Cart')
+const Product = require("../models/Products");
+const Cart = require("../models/Cart");
 
-exports.getAddProducts = (req,res,next) => {
-    res.render('add-product', {
-        pageTitle: 'Add a product'
+exports.getAddProducts = (req, res, next) => {
+  res.render("add-product", {
+    pageTitle: "Add a product",
+  });
+};
+
+exports.postAddProduct = (req, res, next) => {
+  const product = new Product(
+    null,
+    req.body.title,
+    addZeroes(req.body.price),
+    req.body.description,
+    req.body.imageUrl
+  );
+  product.save();
+  res.redirect("/");
+};
+
+exports.getProducts = (req, res, next) => {
+  Product.fetchAll()
+    .then(([rows, fieldData]) => {
+      res.render("shop", {
+        pageTitle: "Shop Page",
+        products: rows,
+      });
     })
-}
+    .catch((err) => console.log(err));
+};
 
-exports.postAddProduct = (req,res,next) => {
-    const product = new Product(req.body.name, addZeroes(req.body.price))
-    product.save()
-    res.redirect('/')
-}
-
-exports.getProducts = (req,res,next) => {
-    //-----ASYNC WAY
-    //create our own callback process
-    // Product.fetchAll((fetchedProducts) => {
-    //     console.log('fetched: ',fetchedProducts)
-    //     res.render('shop', {
-    //         pageTitle: 'Shop Page',
-    //         products: fetchedProducts
-    //     })
-    // })
-
-    //-----SYNC WAY
-    const fetchedProducts = Product.fetchAllSync()
-    res.render('shop', {
-        pageTitle: 'Shop Page',
-        products: fetchedProducts
+exports.getOneProductById = (req, res, next) => {
+  Product.findById(req.params.id)
+    .then(([row, fieldData]) => {
+      res.render("product", {
+        pageTitle: row[0].title,
+        product: row[0],
+      });
     })
-    //to test for insomnia
-    // res.json(fetchedProducts)
-}
+    .catch((err) => {
+      console.log(err);
+    });
+};
 
-exports.getOneProductById = (req,res,next) => {
-    const fetchProduct = Product.fetchOneProductById(+req.params.id)
-    if(fetchProduct.msg){
-        res.render('404', {
-            pageTitle: 'PAGE NOT FOUND',
-            message: fetchProduct.msg
-        })
-    }else{
-        res.render('product', {
-            pageTitle: fetchProduct.name,
-            product: fetchProduct
-        })
-        //to test for insomnia
-        // res.json(fetchProduct)
-    }
-}
+exports.deleteProduct = (req, res, next) => {
+  const prodId = +req.body.productId;
+  Product.deleteById(prodId);
+  res.redirect("/");
+};
 
-exports.deleteProduct = (req,res,next) => {
-    const prodId = +req.body.productId
-    Product.deleteById(prodId)
-    res.redirect('/')
-}
+exports.postCart = (req, res, next) => {
+  const prodId = +req.body.productId;
+  const fetchProduct = Product.fetchOneProductById(prodId);
 
-exports.postCart = (req,res,next) => {
-    const prodId = +req.body.productId
-    const fetchProduct = Product.fetchOneProductById(prodId)
-
-    Cart.addProduct(fetchProduct.id, fetchProduct.price)
-    // res.render('cart',)
-    res.redirect('/')
-}
+  Cart.addProduct(fetchProduct.id, fetchProduct.price);
+  // res.render('cart',)
+  res.redirect("/");
+};
 
 function addZeroes(num) {
-    const dec = num.split('.')[1]
-    const len = dec && dec.length > 2 ? dec.length : 2
-    return Number(num).toFixed(len)
+  const dec = num.split(".")[1];
+  const len = dec && dec.length > 2 ? dec.length : 2;
+  return Number(num).toFixed(len);
 }
