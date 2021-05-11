@@ -3,6 +3,7 @@ const path = require('path');
 
 const adminRouters = require('./routes/admin');
 const shopRouters = require('./routes/shop');
+const db = require('./util/database')
 
 //--------------------Setups--------------------
 const app = express();
@@ -19,6 +20,10 @@ app.use(express.static(path.join(__dirname, 'public')))
 //--------------------Middleware--------------------
 app.use('/admin',adminRouters);
 app.use(shopRouters);
+
+db.execute("SELECT * FROM products").then((result)=> {
+    console.log(result);
+}).catch(err => console.log(err))
 
 // catch all middleware
 app.use((req,res,next)=>{
